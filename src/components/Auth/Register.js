@@ -2,6 +2,7 @@ import React from "react";
 import {Grid,Form,Segment,Button,Header, Message, Icon} from "semantic-ui-react"
 import {Link} from "react-router-dom"
 import firebase from "../../firebase"
+import md5 from "md5"
 
 class Register extends React.Component{
 
@@ -10,6 +11,9 @@ class Register extends React.Component{
         email: "",
         password: "",
         passwordConfirmation: "",
+        errors: [],
+        loading: false,
+        usersRef: firebase.database().ref("users")
     };
 
     isFormValid = () =>{
@@ -29,8 +33,8 @@ class Register extends React.Component{
         }
     };
 
-    isFormEmpty = ({username, email, password, passwordConfirm}) =>{
-        return !username.length || !email.length || !password.length || ! passwordConfirm.length
+    isFormEmpty = ({username, email, password, passwordConfirmation}) =>{
+        return !username || !email || !password || ! passwordConfirmation
     };
 
     isPasswordValid = ({password, passwordConfirmation})=>{
@@ -52,27 +56,56 @@ class Register extends React.Component{
     };
 
     handleSubmit = (e)=>{
+        e.preventDefault();
+
         if (this.isFormValid()) {
-            e.preventDefault();
+            this.setState({errors:[], loading:true});
             firebase
                 .auth()
                 .createUserWithEmailAndPassword(this.state.email, this.state.password)
                 .then(createdUser => {
-
+                    createdUser.user.updateProfile({
+                        displayName: this.state.username,
+                        photoURL: `http://gavatar.com/avatar/${md5(createdUser.user.email)}?d=identicon`
+                    })
+                    .then(()=>{
+                        this.saveUser(createdUser).then(()=>{
+                            console.log("User saved")
+                        });
+                        this.setState({loading:false})
+                    })
+                    .catch(err => {
+                        this.setState({errors: this.state.errors.concat(err),loading:false})
+                    })
                 })
-                .catch(err => {
-
+                .catch(err=>{
+                    console.log(err)
                 })
+
         }
     };
 
+    saveUser = createdUser => {
+        return this.state.usersRef.child(createdUser.user.uid).set({
+            name: createdUser.user.displayName,
+            avatar: createdUser.user.photoURL,
+        })
+    };
+
+    handleInputError = (errors, inputName) => {
+        return errors.some(error=>error
+            .message
+            .toLowerCase()
+            .includes(inputName))? "error" : ""
+    };
+
     render(){
-        const {username, email, password, passwordConfirmation, errors}=this.state;
+        const {username, email, password, passwordConfirmation, errors, loading}=this.state;
         return(
             <Grid textAlign="center" verticalAlign="middle" className="app">
                 <Grid.Column style={{maxWidth:450}}>
-                    <Header as="h2" icon color="orange" textAlign="center">
-                        <Icon name="puzzle piece" color="orange"/>
+                    <Header as="h1" icon color="orange" textAlign="center">
+                        <Icon name="user secret" color="orange"/>
                         Register for DevChat
                     </Header>
                     <Form size="large" onSubmit={this.handleSubmit}>
@@ -92,6 +125,7 @@ class Register extends React.Component{
                                         onChange={this.handleChange}
                                         type="email"
                                         value={email}
+                                        className={this.handleInputError(errors, "email")}
                             />
                             <Form.Input fluid name="password"
                                         icon="lock"
@@ -100,6 +134,7 @@ class Register extends React.Component{
                                         onChange={this.handleChange}
                                         type="password"
                                         value={password}
+                                        className={this.handleInputError(errors, "password")}
                             />
                             <Form.Input fluid name="passwordConfirmation"
                                         icon="lock"
@@ -108,8 +143,12 @@ class Register extends React.Component{
                                         onChange={this.handleChange}
                                         type="password"
                                         value={passwordConfirmation}
+                                        className={this.handleInputError(errors, "password")}
                             />
-                            <Button color="orange" fluid size="large">Submit</Button>
+                            <Button disabled={loading} className={loading ? "loading" : ""}
+                                    color="orange" fluid size="large">
+                                Submit
+                            </Button>
                         </Segment>
                     </Form>
                     {errors && errors.length>0 ? (
