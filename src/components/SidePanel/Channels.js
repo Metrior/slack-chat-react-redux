@@ -104,7 +104,7 @@ class Channels extends Component{
 
     changeChannel = channel => {
         this.setActiveChannel(channel);
-        this.props.setCurrentChannel(channel)
+        this.props.setCurrentChannel(channel);
     };
 
     setActiveChannel = channel => {
@@ -163,4 +163,10 @@ class Channels extends Component{
     }
 }
 
-export default connect(null, {setCurrentChannel})(Channels)
+const mapDispatchToProps = dispatch => {
+    return {
+        setCurrentChannel: channel => dispatch(setCurrentChannel(channel)),
+    }
+};
+
+export default connect(null, mapDispatchToProps)(Channels)
