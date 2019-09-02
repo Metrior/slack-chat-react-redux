@@ -40,7 +40,7 @@ class Channels extends Component{
 
     setFirstChannel = () => {
         const firstChannel = this.state.channels[0];
-        if (this.state.firstLoad && this.state.channels > 0){
+        if (this.state.firstLoad && this.state.channels){
             this.props.setCurrentChannel(firstChannel);
             this.setActiveChannel(firstChannel);
         }

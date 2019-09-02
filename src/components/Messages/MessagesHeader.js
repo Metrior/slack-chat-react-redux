@@ -11,7 +11,7 @@ class MessagesHeader extends Component {
                     <Icon name={"star outline"} color="black"/>
                     </span>
                     <Header.Subheader>
-
+                    2 Users
                     </Header.Subheader>
                 </Header>
                 <Header floated="right">
